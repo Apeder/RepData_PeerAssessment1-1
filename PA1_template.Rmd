@@ -12,41 +12,53 @@ actData <- read.csv("./RepData_PeerAssessment1/ActivityData/activity.csv")
 actDataClean <- na.omit(actData)                   
 ```
 As-01,10-08, 11-01, 11-04, 11-09, 11-10, 11-14 and 11-30 contain only NA values for 
-steps taken, these dates are excluded from the dataset. 
+steps taken, these dates are excluded from the dataset "actDataClean". 
 
 ## What is mean total number of steps taken per day?
 ```{r mean}
+library(plyr)
 x <- ddply(actData,~date,summarise,totalSteps=sum(steps))
-mean(x$sum)
-median(x$sum)
+mean(na.omit(x$totalSteps))
+median(na.omit(x$totalSteps))
 print(x)
 ```
 ## What is the average daily activity pattern?
 ```{r avgdaily, echo=FALSE}
-hist(x$sum)
+hist(x$totalSteps)
 y <- ddply(actDataClean,~interval,summarise,AvgSteps=mean(steps))
 plot(y, type="l")
-which.max(y$AvgSteps)
+y$interval[[which.max(y$AvgSteps)]]
 ```
 ## Imputing missing values
+```{r countNA}
+summary(actData)
+```
+2304 NAs - how to put this inline in the text?
 ```{r impute}
 actDataFull <- actData
 actDataFull[is.na(actDataFull)] <- mean(y$AvgSteps)
 ```
 Replaced all missing values with the mean for all intervals. 
-
-summary(actData)
-2304 NAs 
-
+  
+```{r ImputedAnalysis}
 z <- ddply(actDataFull,~date,summarise,totalSteps=sum(steps))
 mean(z$totalSteps)
 median(z$totalSteps)
 hist(z$totalSteps)
-
-Did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
+```
+  Did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r weekdays}
 actDataFull$date <- as.POSIXct(actDataFull$date)
-actDataFull$Day <- weekdays(actDataFull$data)
-plot(interval~steps, type="l", data=)
+actDataFull$Day <- factor(weekdays(actDataFull$date))
+actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Weekday", "Weekend"="Weekend", "Thursday"="Weekday", "Tuesday"="Weekday", "Wednesday"="Weekday"))
+```
+
+```{r plotData}
+ab <- ddply(actDataFull,.(Day, interval),summarise,AvgSteps=mean(steps))
+library(ggplot2)
+g <- ggplot(ab, aes(interval, AvgSteps))
+g + geom_line() + facet_grid(.~Day)
+```
 
