@@ -4,22 +4,49 @@ output:
   html_document:
     keep_md: true
 ---
-
-
 ## Loading and preprocessing the data
-
-
+```{r loaddata}
+setwd("~/Rfiles")
+unzip("./RepData_PeerAssessment1/activity.zip", exdir="./RepData_PeerAssessment1/ActivityData")
+actData <- read.csv("./RepData_PeerAssessment1/ActivityData/activity.csv")
+actDataClean <- na.omit(actData)                   
+```
+As-01,10-08, 11-01, 11-04, 11-09, 11-10, 11-14 and 11-30 contain only NA values for 
+steps taken, these dates are excluded from the dataset. 
 
 ## What is mean total number of steps taken per day?
-
-
-
+```{r mean}
+x <- ddply(actData,~date,summarise,totalSteps=sum(steps))
+mean(x$sum)
+median(x$sum)
+print(x)
+```
 ## What is the average daily activity pattern?
-
-
-
+```{r avgdaily, echo=FALSE}
+hist(x$sum)
+y <- ddply(actDataClean,~interval,summarise,AvgSteps=mean(steps))
+plot(y, type="l")
+which.max(y$AvgSteps)
+```
 ## Imputing missing values
+```{r impute}
+actDataFull <- actData
+actDataFull[is.na(actDataFull)] <- mean(y$AvgSteps)
+```
+Replaced all missing values with the mean for all intervals. 
 
+summary(actData)
+2304 NAs 
 
+z <- ddply(actDataFull,~date,summarise,totalSteps=sum(steps))
+mean(z$totalSteps)
+median(z$totalSteps)
+hist(z$totalSteps)
+
+Did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+actDataFull$date <- as.POSIXct(actDataFull$date)
+actDataFull$Day <- weekdays(actDataFull$data)
+plot(interval~steps, type="l", data=)
+
