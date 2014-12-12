@@ -8,7 +8,7 @@ actData <- read.csv("./RepData_PeerAssessment1/ActivityData/activity.csv")
 actDataClean <- na.omit(actData)                   
 ```
 As-01,10-08, 11-01, 11-04, 11-09, 11-10, 11-14 and 11-30 contain only NA values for 
-steps taken, these dates are excluded from the dataset. 
+steps taken, these dates are excluded from the dataset "actDataClean". 
 
 ## What is mean total number of steps taken per day?
 
@@ -99,11 +99,29 @@ print(x)
 ## 61 2012-11-30         NA
 ```
 ## What is the average daily activity pattern?
-![](./PA1_template_files/figure-html/avgdaily-1.png) ![](./PA1_template_files/figure-html/avgdaily-2.png) 
+
+```r
+hist(x$totalSteps)
+```
+
+![](./PA1_template_files/figure-html/avgdaily-1.png) 
+
+```r
+y <- ddply(actDataClean,~interval,summarise,AvgSteps=mean(steps))
+plot(y, type="l")
+```
+
+![](./PA1_template_files/figure-html/avgdaily-2.png) 
+
+```r
+y$interval[[which.max(y$AvgSteps)]]
+```
 
 ```
 ## [1] 835
 ```
+Interval 835 has the highest average steps value, seen clearly in the line graph above cresting over 200 steps. 
+
 ## Imputing missing values
 
 ```r
@@ -120,13 +138,13 @@ summary(actData)
 ##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
 ##  NA's   :2304     (Other)   :15840
 ```
-2304 NAs - how to put this inline in the text?
+There are 2304 NAs in the Dataset.  
 
 ```r
 actDataFull <- actData
 actDataFull[is.na(actDataFull)] <- mean(y$AvgSteps)
 ```
-Replaced all missing values with the mean for all intervals. 
+Replaced all missing values with the mean for all intervals, about 37. 
   
 
 ```r
@@ -151,18 +169,15 @@ hist(z$totalSteps)
 ```
 
 ![](./PA1_template_files/figure-html/ImputedAnalysis-1.png) 
-Did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
+
+Imputing the missing values by replacing them with the interval mean did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```r
 actDataFull$date <- as.POSIXct(actDataFull$date)
 actDataFull$Day <- factor(weekdays(actDataFull$date))
-actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Weekday", "Weekend"="Weekend", "Thursday"="Weekday", "Tuesday"="Weekday", "Wednesday"="Weekday"))
-```
-
-```
-## The following `from` values were not present in `x`: Weekend
+actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Weekday", "Thursday"="Weekday", "Tuesday"="Weekday", "Wednesday"="Weekday", "Saturday"="Weekend", "Sunday"="Weekend"))
 ```
 
 
@@ -170,8 +185,10 @@ actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Week
 ab <- ddply(actDataFull,.(Day, interval),summarise,AvgSteps=mean(steps))
 library(ggplot2)
 g <- ggplot(ab, aes(interval, AvgSteps))
-g + geom_line() + facet_grid(.~Day)
+g + geom_line() + facet_grid(.~Day) + geom_line(stat = "hline", yintercept = "mean", col="red")
 ```
 
 ![](./PA1_template_files/figure-html/plotData-1.png) 
 
+
+At first glance, weekdays appear to have a larger number of steps, however, we can see that the mean steps taken is slightly higher on wekeends.  It appears that a single high average value is pushing weeekday steps higher. Perhaps this is a morning walk to work that doesn't occur on weekends? 

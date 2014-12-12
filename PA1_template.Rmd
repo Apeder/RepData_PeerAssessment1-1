@@ -23,22 +23,24 @@ median(na.omit(x$totalSteps))
 print(x)
 ```
 ## What is the average daily activity pattern?
-```{r avgdaily, echo=FALSE}
+```{r avgdaily}
 hist(x$totalSteps)
 y <- ddply(actDataClean,~interval,summarise,AvgSteps=mean(steps))
 plot(y, type="l")
 y$interval[[which.max(y$AvgSteps)]]
 ```
+Interval 835 has the highest average steps value, seen clearly in the line graph above cresting over 200 steps. 
+
 ## Imputing missing values
 ```{r countNA}
 summary(actData)
 ```
-2304 NAs - how to put this inline in the text?
+There are 2304 NAs in the Dataset.  
 ```{r impute}
 actDataFull <- actData
 actDataFull[is.na(actDataFull)] <- mean(y$AvgSteps)
 ```
-Replaced all missing values with the mean for all intervals. 
+Replaced all missing values with the mean for all intervals, about 37. 
   
 ```{r ImputedAnalysis}
 z <- ddply(actDataFull,~date,summarise,totalSteps=sum(steps))
@@ -46,19 +48,22 @@ mean(z$totalSteps)
 median(z$totalSteps)
 hist(z$totalSteps)
 ```
-  Did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
+
+Imputing the missing values by replacing them with the interval mean did not affect the mean, though it did make the median equivalent to the mean.  As a result, the distribution of the imputed data looks more normally distributed. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r weekdays}
 actDataFull$date <- as.POSIXct(actDataFull$date)
 actDataFull$Day <- factor(weekdays(actDataFull$date))
-actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Weekday", "Weekend"="Weekend", "Thursday"="Weekday", "Tuesday"="Weekday", "Wednesday"="Weekday"))
+actDataFull$Day <- revalue(actDataFull$Day, c("Friday"="Weekday", "Monday"="Weekday", "Thursday"="Weekday", "Tuesday"="Weekday", "Wednesday"="Weekday", "Saturday"="Weekend", "Sunday"="Weekend"))
 ```
 
-```{r plotData}
+```{r plotData, fig.width=10}
 ab <- ddply(actDataFull,.(Day, interval),summarise,AvgSteps=mean(steps))
 library(ggplot2)
 g <- ggplot(ab, aes(interval, AvgSteps))
-g + geom_line() + facet_grid(.~Day)
+g + geom_line() + facet_grid(.~Day) + geom_line(stat = "hline", yintercept = "mean", col="red")
 ```
 
+
+At first glance, weekdays appear to have a larger number of steps, however, we can see that the mean steps taken is slightly higher on wekeends.  It appears that a single high average value is pushing weeekday steps higher. Perhaps this is a morning walk to work that doesn't occur on weekends? 
